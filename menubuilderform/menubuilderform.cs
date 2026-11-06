@@ -29,6 +29,19 @@ namespace menubuilderform
             cboCategory.SelectedIndex = 0;
         }
 
+        private void btncategories_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                using categoryform categoriesPage = new();
+                categoriesPage.ShowDialog(this);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Unable to open Category Management.\n\nDetails: {ex.Message}", "Menu Builder Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private void Form1_Load(object sender, EventArgs e)
         {
         }
@@ -51,19 +64,43 @@ namespace menubuilderform
 
         private void btnadditem_Click(object sender, EventArgs e)
         {
-            if (lstavailable.SelectedItem is MenuItem item)
+            try
             {
-                _selectedItems.Add(item);
+                if (lstavailable.SelectedItem is not MenuItem item)
+                {
+                    MessageBox.Show("Select an available menu item first.", "Menu Builder", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                if (!_selectedItems.Contains(item))
+                {
+                    _selectedItems.Add(item);
+                }
+
                 RefreshLists();
+            }
+            catch (Exception ex)
+            {
+                ShowError("add the menu item", ex);
             }
         }
 
         private void btnremoveitem_Click(object sender, EventArgs e)
         {
-            if (lstselected.SelectedItem is MenuItem item)
+            try
             {
+                if (lstselected.SelectedItem is not MenuItem item)
+                {
+                    MessageBox.Show("Select a menu item to remove first.", "Menu Builder", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
                 _selectedItems.Remove(item);
                 RefreshLists();
+            }
+            catch (Exception ex)
+            {
+                ShowError("remove the menu item", ex);
             }
         }
 
@@ -84,21 +121,34 @@ namespace menubuilderform
 
         private void btnsave_Click(object sender, EventArgs e)
         {
-            if (txtmenuename.Text.Trim() == "")
+            try
             {
-                MessageBox.Show("Please enter a menu name.");
-                return;
-            }
+                if (string.IsNullOrWhiteSpace(txtmenuename.Text))
+                {
+                    MessageBox.Show("Please enter a menu name.", "Menu Builder", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    txtmenuename.Focus();
+                    return;
+                }
 
-            if (_selectedItems.Count == 0)
+                if (_selectedItems.Count == 0)
+                {
+                    MessageBox.Show("Add at least one item to the menu.", "Menu Builder", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                DialogResult = DialogResult.OK;
+                MessageBox.Show("Menu saved successfully!", "Menu Builder", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                Close();
+            }
+            catch (Exception ex)
             {
-                MessageBox.Show("Add at least one item to the menu.");
-                return;
+                ShowError("save the menu", ex);
             }
+        }
 
-            DialogResult = DialogResult.OK;
-            MessageBox.Show("Menu saved!");
-            Close();
+        private static void ShowError(string operation, Exception exception)
+        {
+            MessageBox.Show($"Unable to {operation}.\n\nDetails: {exception.Message}", "Menu Builder Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 

@@ -35,53 +35,94 @@ namespace menubuilderform
 
         private void btnAdd_Click(object sender, EventArgs e)
         {
-            var name = txtCategoryName.Text.Trim();
-
-            if (name == "")
+            try
             {
-                MessageBox.Show("Please enter a category name.");
-                return;
-            }
+                string name = txtCategoryName.Text.Trim();
+                if (!ValidateName(name))
+                {
+                    return;
+                }
 
-            if (_categories.Any(c => c.Name.ToLower() == name.ToLower()))
+                if (_categories.Any(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    MessageBox.Show("This category already exists.", "Category Management", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                _categories.Add(new Category { Id = _nextId++, Name = name });
+                RefreshList();
+            }
+            catch (Exception ex)
             {
-                MessageBox.Show("This category already exists.");
-                return;
+                ShowError("add the category", ex);
             }
-
-            _categories.Add(new Category { Id = _nextId++, Name = name });
-            RefreshList();
         }
 
         private void btnUpdate_Click(object sender, EventArgs e)
         {
-            if (lstcategories.SelectedItem is Category c)
+            try
             {
-                var name = txtCategoryName.Text.Trim();
-                if (name == "")
+                if (lstcategories.SelectedItem is not Category category)
                 {
-                    MessageBox.Show("Please enter a category name.");
+                    MessageBox.Show("Select a category first.", "Category Management", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
-                c.Name = name;
+
+                string name = txtCategoryName.Text.Trim();
+                if (!ValidateName(name))
+                {
+                    return;
+                }
+
+                if (_categories.Any(c => c.Id != category.Id && string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    MessageBox.Show("This category already exists.", "Category Management", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                category.Name = name;
                 RefreshList();
+                MessageBox.Show("Category updated successfully.", "Category Management", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show("Select a category first.");
+                ShowError("update the category", ex);
             }
         }
 
         private void btnDelete_Click(object sender, EventArgs e)
         {
-            if (lstcategories.SelectedItem is Category c)
+            try
             {
-                _categories.Remove(c);
+                if (lstcategories.SelectedItem is not Category category)
+                {
+                    MessageBox.Show("Select a category first.", "Category Management", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                DialogResult confirmation = MessageBox.Show(
+                    $"Delete category '{category.Name}'?",
+                    "Confirm Delete",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning);
+
+                if (confirmation != DialogResult.Yes)
+                {
+                    return;
+                }
+
+                if (!_categories.Remove(category))
+                {
+                    MessageBox.Show("The selected category could not be found.", "Category Management", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
                 RefreshList();
+                MessageBox.Show("Category deleted successfully.", "Category Management", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show("Select a category first.");
+                ShowError("delete the category", ex);
             }
         }
 
@@ -91,6 +132,34 @@ namespace menubuilderform
             {
                 txtCategoryName.Text = c.Name;
             }
+        }
+
+        private bool ValidateName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                MessageBox.Show("Please enter a category name.", "Category Management", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtCategoryName.Focus();
+                return false;
+            }
+
+            if (name.Length > 100)
+            {
+                MessageBox.Show("Category names must be 100 characters or fewer.", "Category Management", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtCategoryName.Focus();
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void ShowError(string operation, Exception exception)
+        {
+            MessageBox.Show(
+                $"Unable to {operation}.\n\nDetails: {exception.Message}",
+                "Category Management Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
         }
 
 
